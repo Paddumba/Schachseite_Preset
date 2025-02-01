@@ -3,52 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Schach WebApp</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.2/chess.js"></script>
-    <script src="static/js/chessboard-1.0.0.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.css">
+    <title>Startseite</title>
 </head>
 <body>
-    <h1>Schach WebApp</h1>
-    <div id="board" style="width: 400px"></div>
-    <p id="status"> Spiel läuft...</p>
-
-    <script>
-        var board = Chessboard('board', {
-            draggable: true, //Ermöglich das Ziehen von Figuren
-            position: 'start', //Startposition des Schachbretts
-            onDrop: async function(source, target) { //Event das ausgelöst wird, sobald eine Figur bewegt wird von source zu target square. Async bedeutet, dass die funktion wartet ohne solange den Rest des Codes zu blockieren
-                let move = source + target; //Zug in UCI-Notation e2e4
-
-                let oldFen = board.fen();
-
-                let response = await fetch("/move", { //Fetch Befehl sendet an Flask "/move" -> hier wird auf die app_route ("/move") zugegriffen
-                    method: "POST", //Post, da wir Daten an das Backend senden
-                    headers: { "Content-Type": "application/json" }, //Header für json datei -> Gibt einfach an, dass die Daten als JSON gesendet werden
-                    body: JSON.stringify({ "move": move }) //Den move als JSON Daten senden
-                });
-
-                let data = await response.json(); //Hier wartet das Frontend auf die Antwort des Backends, dass ist die return jsonify function
-
-                if (data.error) {
-                    alert(data.error); //Fehler ausgeben
-                    
-                    board.position(oldFen) //Figur zurücksetzen
-                } else {
-                    board.position(data.fen); //Neues Brett setzen
-                    document.getElementById("status").innerText = data.status;
-                }
-            }
-        });
-
-        // WebSocket-Verbindung für Live-Updates
-        var socket = io.connect("http://127.0.0.1:5000");
-        socket.on("update", function(data) {
-            board.position(data.fen); //Brett wird aktualisiert sobald neue FEN gesendet wird
-            document.getElementById("status").innerText = data.status;
-        });
-    </script>
+    <h1>Willkommen auf der Startseite</h1>
+    <p>Bitte wählen Sie eine der folgenden Seiten aus:</p>
+    <ul>
+        <li><a href="standard.html">Zur Standard-Seite</a></li>
+        <li><a href="knook.html">Zur Knook-Seite</a></li>
+    </ul>
 </body>
 </html>

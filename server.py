@@ -12,6 +12,17 @@ def index():
     #Lädt die HTML-Seite mit dem Schachbrett.
     return render_template("index.html")
 
+@app.route("/standard")
+def standard():
+    #Lädt die HTML-Seite mit dem Schachbrett.
+    return render_template("standard.html")
+
+@app.route("/knook")
+def knook():
+    #Lädt die HTML-Seite mit dem Schachbrett.
+    return render_template("knook.html")
+
+
 @app.route("/board", methods=["GET"])
 def get_board():
     #Gibt das aktuelle Brett als FEN zurück.
