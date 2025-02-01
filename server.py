@@ -1,11 +1,14 @@
 from flask import Flask, jsonify, request, render_template
 from flask_socketio import SocketIO
 import chess
+from custom import setup_custom_game
+
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")  # Erlaubt WebSocket-Verbindungen
 
 board = chess.Board()  # Initialisiere das Schachbrett
+knookbard = setup_custom_game()
 
 @app.route("/")
 def index():
@@ -30,7 +33,7 @@ def get_board():
 
 @app.route("/move", methods=["POST"]) #Akzeptiert nur Anfragen, die Daten senden
 def make_move(): #Führt einen Zug aus und sendet die neue Stellung an das Frontend.
-    
+    global knookbard
     global board
     move_data = request.json #JSOn Daten werden vom Frontend erhalten zb {move: "e2e4"}
     try:

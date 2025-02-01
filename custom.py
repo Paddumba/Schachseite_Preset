@@ -43,3 +43,15 @@ class Knook(chess.Piece):
                     possible_moves.append(target_square)
 
         return possible_moves
+    
+def setup_custom_game():
+    board = chess.Board()
+
+    # Setze einen Knook auf d4 (weiß) und d5 (schwarz)
+    board.set_piece_at(chess.A1, Knook(chess.WHITE))
+    board.set_piece_at(chess.H1, Knook(chess.WHITE))
+    board.set_piece_at(chess.A8, Knook(chess.BLACK))
+    board.set_piece_at(chess.H8, Knook(chess.BLACK))
+
+
+    return board
