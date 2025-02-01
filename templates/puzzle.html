@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="de">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Schach WebApp</title>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.2/chess.js"></script>
+        <script src="static/js/chessboard-1.0.0.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.css">
+    </head>
+<body>
+    <h1>Tagespuzzle von Lichess</h1>
+    <button onclick="loadPuzzle()">Puzzle laden</button>
+    
+    <div id="board" style="width: 400px;"></div>
+    <p id="message"></p>
+
+    <script>
+        let board = Chessboard('board', { draggable: true, position: 'start', onDrop: handleMove });
+        let game = new Chess();
+        let solution = [];
+        let currentMoveIndex = 0;
+
+        async function loadPuzzle() {
+            let response = await fetch("/get_puzzle");
+            let data = await response.json();
+
+            if (data.error) {
+                document.getElementById("message").innerText = data.error;
+                return;
+            }
+
+            game = new Chess(data.fen);
+            board.position(data.fen);
+            solution = data.solution;
+            currentMoveIndex = 0;
+
+            document.getElementById("message").innerText = "Puzzle geladen! Finde den richtigen Zug.";
+        }
+
+        function handleMove(source, target) {
+            let move = source + target;
+
+            if (move === solution[currentMoveIndex]) {
+                game.move({ from: source, to: target });
+                board.position(game.fen());
+                currentMoveIndex++;
+
+                if (currentMoveIndex >= solution.length) {
+                    document.getElementById("message").innerText = "Glückwunsch! Puzzle gelöst!";
+                } else {
+                    document.getElementById("message").innerText = "Richtig! Nächster Zug.";
+                }
+            } else {
+                document.getElementById("message").innerText = "Falsch! Versuche es nochmal.";
+                return 'snapback';
+            }
+        }
+    </script>
+</body>
+</html>

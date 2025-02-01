@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request, render_template
 from flask_socketio import SocketIO
 import chess
 from custom import setup_custom_game
+import requests
 
 
 app = Flask(__name__)
@@ -14,6 +15,27 @@ knookbard = setup_custom_game()
 def index():
     #Lädt die HTML-Seite mit dem Schachbrett.
     return render_template("index.html")
+
+@app.route("/puzzle")
+def puzzle():
+    #Lädt die HTML-Seite mit dem Schachbrett.
+    return render_template("puzzle.html")
+
+@app.route("/get_puzzle")
+def get_puzzle():
+    url = "https://lichess.org/api/puzzle/daily"
+    response = requests.get(url)
+
+    if response.status_code != 200:
+        return jsonify({"error": "Fehler beim Abrufen des Puzzles"})
+
+    data = response.json()
+    
+    puzzle_fen = data["game"]["fen"]  # Ausgangsstellung
+    puzzle_moves = data["puzzle"]["solution"]  # Richtige Züge
+    
+    return jsonify({"fen": puzzle_fen, "solution": puzzle_moves})
+
 
 @app.route("/standard")
 def standard():
