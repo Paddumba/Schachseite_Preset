@@ -58,10 +58,12 @@
                     document.getElementById("message").innerText = "Glückwunsch! Puzzle gelöst!";
                 } else {
                     document.getElementById("message").innerText = "Richtig! Nächster Zug.";
-                    let opponent_move = solution[currentMoveIndex]
-                    game.move({ from: source, to: target });
-                    board.position(game.fen());
-                    currentMoveIndex++
+                    if (currentMoveIndex < solution.length) {
+                        let opponent_move = solution[currentMoveIndex];
+                        game.move(opponent_move);
+                        board.position(game.fen());
+                        currentMoveIndex++
+                    }
                 }
 
 
