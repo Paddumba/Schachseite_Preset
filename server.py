@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, render_template
+from flask import Flask, jsonify, request, render_template, session
 from flask_socketio import SocketIO
 import chess
 import requests
@@ -7,10 +7,11 @@ import io
 
 
 app = Flask(__name__)
+app.secret_key = "mein_geheimer_schluessel"
 socketio = SocketIO(app, cors_allowed_origins="*")  # Erlaubt WebSocket-Verbindungen
 
 board = chess.Board()  # Initialisiere das Schachbrett
-
+data= None
 
 # Lädt die Startseite
 @app.route("/")
@@ -67,6 +68,8 @@ def puzzle():
 
 @app.route("/get_puzzle")
 def get_puzzle():
+    global data #Zugriff auf die globale Variable sodass die Daten hier verarbeitet werden können
+
     url = "https://lichess.org/api/puzzle/daily"
     response = requests.get(url)
 
@@ -83,6 +86,10 @@ def get_puzzle():
 
     if not pgn_text or not puzzle_moves:
         return jsonify({"error": "Ungültige Puzzledaten erhalten."}), 500
+    
+    session["puzzle_moves"] = puzzle_moves
+    session["current_move_index"] = 0  # Start des Puzzles
+
 
     # 🎯 PGN in ein Schachspiel umwandeln
     pgn_io = io.StringIO(pgn_text)
@@ -93,7 +100,7 @@ def get_puzzle():
     board = game.board()
     initial_ply = data["puzzle"].get("initialPly", 0)
     initial_ply +=1
-    print("Intial ply", initial_ply)
+    #print("Intial ply", initial_ply)
     for move in game.mainline_moves():
         board.push(move)
         initial_ply -= 1
@@ -107,36 +114,61 @@ def get_puzzle():
     return jsonify({"fen": puzzle_fen, "solution": puzzle_moves})
 
 
-@app.route("/puzzlemove", methods=["POST"]) #Akzeptiert nur Anfragen, die Daten senden
-def puzzlemove(): #Führt einen Zug aus und sendet die neue Stellung an das Frontend.
+
+@app.route("/puzzlemove", methods=["POST"])
+def puzzlemove():
+    global board, session, data
+
+    if "puzzle_data" not in session:
+        return jsonify({"error": "Kein Puzzle geladen!"}), 500
+
+    puzzle_moves = session["puzzle_moves"]
     
-    global board
+    move_data = request.json
+    move_uci = move_data.get("move") 
+    print(move_uci)
+    if not move_uci:
+        return jsonify({"error": "Kein Zug übermittelt!"})
     
-    move_data = request.json #JSOn Daten werden vom Frontend erhalten zb {move: "e2e4"}
+    current_move_index=session["current_move_index"]
+    print("currentmove", current_move_index)
+
     try:
-        move = chess.Move.from_uci(move_data["move"]) #UCI-Zug umwandeln e2e4 etc.
-        if move in board.legal_moves: # Überprüft ob der Zug legal ist
-            board.push(move) #Zug ausführen
+        move = chess.Move.from_uci(move_uci)
 
-            # Überprüfung ob der Zug Schachmatt, Patt etc ist
-            status ="Spiel läuft ..."
-            if board.is_checkmate(): # Ist der Zug Schachmatt
-                status = "Checkmate!"
-            elif board.is_stalemate():
-                status="Stalemate!"
-            else:
-                status ="OK"
+        # Prüfen, ob der Zug korrekt ist
+        current_move_index = session.get("current_move_index", 0)
+        print("move_index", current_move_index)
+        print("len_puzzzlemoves", len(puzzle_moves))
+        print(move_uci, puzzle_moves[current_move_index] )
 
-
-            socketio.emit("update", {"fen": board.fen(),  "status": status})  # Neues Brett und Status an alle Clients senden
-
-            return jsonify({"fen": board.fen(), "status": status})
-        
-        else:
-            return jsonify({"error": "Ungültiger Zug!"})
+        if current_move_index >= len(puzzle_moves) or move_uci != puzzle_moves[current_move_index]:
+            return jsonify({"error": "Falscher Zug! Versuche es erneut."})
             
+        else:
+            # ✅ Richtiger Zug -> ausführen
+            board.push(move)
+            current_move_index += 1
+            session["current_move_index"] = current_move_index
+
+            if current_move_index % 2 == 0:
+            # Spielerzug - serverseitig verwalten
+                status = "Spielerzug"
+            else:
+                # Computerzug - wird sofort vom Frontend durchgeführt
+                opponent_move_uci = puzzle_moves[current_move_index]
+                opponent_move = chess.Move.from_uci(opponent_move_uci)
+                board.push(opponent_move)
+                current_move_index += 1
+                session["current_move_index"] = current_move_index
+                status = "Computerzug"
+
+            # Status und das Schachbrett (FEN) zurück an das Frontend senden
+            return jsonify({"fen": board.fen(), "status": status})
+
     except Exception:
         return jsonify({"error": "Fehlerhafte Eingabe!"})
+
 
 
 

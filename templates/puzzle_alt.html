@@ -36,6 +36,8 @@
                 return;
             }
 
+            console.log("Empfangenes Puzzle:", data); // Debugging
+
             game = new Chess(data.fen);
             board.position(data.fen);
             solution = data.solution;
@@ -45,7 +47,7 @@
         }
         
         //Oben ist die Brett so definiert, dass bei onDrop handlemove ausgeführt wird
-        async function handleMove(source, target) {
+        function handleMove(source, target) {
             let move = source + target;
 
             if (move === solution[currentMoveIndex]) {
