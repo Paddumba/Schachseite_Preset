@@ -107,6 +107,36 @@ def get_puzzle():
     return jsonify({"fen": puzzle_fen, "solution": puzzle_moves})
 
 
+@app.route("/puzzlemove", methods=["POST"]) #Akzeptiert nur Anfragen, die Daten senden
+def puzzlemove(): #Führt einen Zug aus und sendet die neue Stellung an das Frontend.
+    
+    global board
+    
+    move_data = request.json #JSOn Daten werden vom Frontend erhalten zb {move: "e2e4"}
+    try:
+        move = chess.Move.from_uci(move_data["move"]) #UCI-Zug umwandeln e2e4 etc.
+        if move in board.legal_moves: # Überprüft ob der Zug legal ist
+            board.push(move) #Zug ausführen
+
+            # Überprüfung ob der Zug Schachmatt, Patt etc ist
+            status ="Spiel läuft ..."
+            if board.is_checkmate(): # Ist der Zug Schachmatt
+                status = "Checkmate!"
+            elif board.is_stalemate():
+                status="Stalemate!"
+            else:
+                status ="OK"
+
+
+            socketio.emit("update", {"fen": board.fen(),  "status": status})  # Neues Brett und Status an alle Clients senden
+
+            return jsonify({"fen": board.fen(), "status": status})
+        
+        else:
+            return jsonify({"error": "Ungültiger Zug!"})
+            
+    except Exception:
+        return jsonify({"error": "Fehlerhafte Eingabe!"})
 
 
 
