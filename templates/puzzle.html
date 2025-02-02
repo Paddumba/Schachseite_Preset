@@ -24,6 +24,8 @@
         let currentMoveIndex = 0;
 
         async function loadPuzzle() {
+            document.getElementById("message").innerText = "Lade Puzzle...";
+            
             let response = await fetch("/get_puzzle");
             let data = await response.json();
 
@@ -32,12 +34,14 @@
                 return;
             }
 
+            console.log("Empfangenes Puzzle:", data); // Debugging
+
             game = new Chess(data.fen);
             board.position(data.fen);
             solution = data.solution;
             currentMoveIndex = 0;
 
-            document.getElementById("message").innerText = "Puzzle geladen! Finde den richtigen Zug.";
+            document.getElementById("message").innerText = "Puzzle geladen! Dein Zug.";
         }
 
         function handleMove(source, target) {
