@@ -43,20 +43,29 @@
 
             document.getElementById("message").innerText = "Puzzle geladen! Dein Zug.";
         }
-
+        
+        //Oben ist die Brett so definiert, dass bei onDrop handlemove ausgeführt wird
         function handleMove(source, target) {
             let move = source + target;
 
             if (move === solution[currentMoveIndex]) {
                 game.move({ from: source, to: target });
                 board.position(game.fen());
+                
                 currentMoveIndex++;
 
                 if (currentMoveIndex >= solution.length) {
                     document.getElementById("message").innerText = "Glückwunsch! Puzzle gelöst!";
                 } else {
                     document.getElementById("message").innerText = "Richtig! Nächster Zug.";
+                    let opponent_move = solution[currentMoveIndex]
+                    game.move({ from: source, to: target });
+                    board.position(game.fen());
+                    currentMoveIndex++
                 }
+
+
+
             } else {
                 document.getElementById("message").innerText = "Falsch! Versuche es nochmal.";
                 return 'snapback';
