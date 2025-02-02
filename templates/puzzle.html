@@ -57,12 +57,15 @@
                 if (currentMoveIndex >= solution.length) {
                     document.getElementById("message").innerText = "Glückwunsch! Puzzle gelöst!";
                 } else {
-                    document.getElementById("message").innerText = "Richtig! Nächster Zug.";
+                    //document.getElementById("message").innerText = "Richtig! Nächster Zug.";
                     if (currentMoveIndex < solution.length) {
-                        let opponent_move = solution[currentMoveIndex];
-                        game.move(opponent_move);
-                        board.position(game.fen());
-                        currentMoveIndex++
+                        let opponent_move = solution[currentMoveIndex]
+                        let source_opponent = opponent_move.substring(0, 2);
+                        let to_opponent = opponent_move.substring(2, 4);
+                        game.move({ from: source_opponent, to: to_opponent });  // Gegnerzug ausführen
+                        board.position(game.fen()); // Brett neu setzen
+                        currentMoveIndex++;         // Gegnerzug als erledigt markieren
+
                     }
                 }
 
