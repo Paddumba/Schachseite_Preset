@@ -47,6 +47,7 @@
         //Oben ist die Brett so definiert, dass bei onDrop handlemove ausgeführt wird
         async function handleMove(source, target) {
             let move = source + target;
+            let oldFen = board.fen();
 
             try {
                 // 1️⃣ Spielerzug ans Backend senden
@@ -60,13 +61,22 @@
 
                 if (data.error) {
                     alert(data.error);
-                    return;
+                    board.position(oldFen)
+                
                 }
 
                 // 2️⃣ Spielerzug auf dem Brett ausführen
                 game.move({ from: source, to: target });
                 board.position(data.fen);
-                document.getElementById("message").innerText = "Richtiger Zug! Warte auf Gegner...";
+
+                if (data.message === "Glückwunsch! Puzzle gelöst!") {
+                    document.getElementById("message").innerText = data.message;
+                    return;  // 🎯 Sofort beenden, kein Gegnerzug mehr nötig
+        }
+
+        
+        
+                //document.getElementById("message").innerText = "Richtiger Zug! Warte auf Gegner...";
 
                 // 3️⃣ Falls Gegnerzug folgt, warte darauf und führe ihn automatisch aus
                 if (data.waiting_for_opponent) {

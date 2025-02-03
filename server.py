@@ -88,8 +88,7 @@ def get_puzzle():
     if not pgn_text or not puzzle_moves:
         return jsonify({"error": "Ungültige Puzzledaten erhalten."}), 500
     
-    session["puzzle_moves"] = puzzle_moves
-    session["current_move_index"] = 0  # Start des Puzzles
+
 
 
     # 🎯 PGN in ein Schachspiel umwandeln
@@ -110,6 +109,8 @@ def get_puzzle():
 
     # 🎯 FEN extrahieren
     session["fen"]=board.fen()
+    session["puzzle_moves"] = puzzle_moves
+    session["current_move_index"] = 0  # Start des Puzzles
 
     return jsonify({"fen": session["fen"], "solution": puzzle_moves})
 
@@ -146,10 +147,15 @@ def puzzlemove():
         board.push(move)
         current_move_index += 1
         session["current_move_index"] = current_move_index
-
+        session["fen"]= board.fen()
+        print("currentindex", current_move_index)
+        print("längepuzzle", len(puzzle_moves))
+        #if current_move_index >= len(puzzle_moves):
+        #    return jsonify({"fen": session["fen"], "message": "Glückwunsch! Puzzle gelöst!"})
+        
         # 🟢 SOFORT das aktualisierte Brett zurückgeben, ohne den Gegnerzug
         return jsonify({
-            "fen": board.fen(),
+            "fen": session["fen"],
             "status": "OK",
             "waiting_for_opponent": True  # Signalisiert dem Frontend, dass der Gegnerzug folgen muss
         })
@@ -179,6 +185,8 @@ def get_opponent_move():
     board.push(opponent_move)
     current_move_index += 1
     session["current_move_index"] = current_move_index
+    session["fen"]=board.fen()
+
 
     # 🟢 Neuer Brettstatus nach dem Gegnerzug senden
     return jsonify({
