@@ -10,7 +10,8 @@ app = Flask(__name__)
 app.secret_key = "mein_geheimer_schluessel"
 socketio = SocketIO(app, cors_allowed_origins="*")  # Erlaubt WebSocket-Verbindungen
 
-board = chess.Board()  # Initialisiere das Schachbrett
+board = chess.Board()
+puzzle_board = chess.Board()  # Initialisiere das Schachbrett
 data= None
 
 # Lädt die Startseite
@@ -97,18 +98,18 @@ def get_puzzle():
     #print("game", game)
 
     # 🎯 Bis zum richtigen Puzzle-Zug vorspulen
-    board = game.board()
+    puzzle_boardboard = game.board()
     initial_ply = data["puzzle"].get("initialPly", 0)
     initial_ply +=1
     #print("Intial ply", initial_ply)
     for move in game.mainline_moves():
-        board.push(move)
+        puzzle_board.push(move)
         initial_ply -= 1
         if initial_ply == 0:
             break  # Wir sind jetzt am Start des Puzzles
 
     # 🎯 FEN extrahieren
-    session["fen"]=board.fen()
+    session["fen"]=puzzle_board.fen()
     session["puzzle_moves"] = puzzle_moves
     session["current_move_index"] = 0  # Start des Puzzles
 
@@ -118,8 +119,8 @@ def get_puzzle():
 
 @app.route("/puzzlemove", methods=["POST"])
 def puzzlemove():
-    global board, session
-    print("fen", board.fen())
+    global puzzle_board, session
+
     
     if "puzzle_moves" not in session:
         return jsonify({"error": "Kein Puzzle geladen!"}), 500
@@ -136,7 +137,7 @@ def puzzlemove():
 
     try:
         if "fen" in session:
-            board = chess.Board(session["fen"])  # Stelle die korrekte Stellung wieder her
+            puzzle_board = chess.Board(session["fen"])  # Stelle die korrekte Stellung wieder her
         move = chess.Move.from_uci(move_uci)
         
         # Prüfen, ob der Zug korrekt ist
@@ -144,14 +145,14 @@ def puzzlemove():
             return jsonify({"error": "Falscher Zug! Versuche es erneut."})
 
         # ✅ Spielerzug ausführen
-        board.push(move)
+        puzzle_board.push(move)
         current_move_index += 1
         session["current_move_index"] = current_move_index
-        session["fen"]= board.fen()
+        session["fen"]= puzzle_board.fen()
         print("currentindex", current_move_index)
         print("längepuzzle", len(puzzle_moves))
-        #if current_move_index >= len(puzzle_moves):
-        #    return jsonify({"fen": session["fen"], "message": "Glückwunsch! Puzzle gelöst!"})
+        if current_move_index >= len(puzzle_moves):
+           return jsonify({"fen": session["fen"], "message": "Glückwunsch! Puzzle gelöst!"})
         
         # 🟢 SOFORT das aktualisierte Brett zurückgeben, ohne den Gegnerzug
         return jsonify({
@@ -168,7 +169,7 @@ def puzzlemove():
 @app.route("/get_opponent_move", methods=["GET"])
 def get_opponent_move():
     """ Diese Route fragt den nächsten Gegnerzug ab, falls einer existiert """
-    global board, session
+    global puzzle_board, session
 
     if "puzzle_moves" not in session:
         return jsonify({"error": "Kein Puzzle geladen!"}), 500
@@ -182,15 +183,15 @@ def get_opponent_move():
     # ✅ Gegnerzug ausführen
     opponent_move_uci = puzzle_moves[current_move_index]
     opponent_move = chess.Move.from_uci(opponent_move_uci)
-    board.push(opponent_move)
+    puzzle_board.push(opponent_move)
     current_move_index += 1
     session["current_move_index"] = current_move_index
-    session["fen"]=board.fen()
+    session["fen"]=puzzle_board.fen()
 
 
     # 🟢 Neuer Brettstatus nach dem Gegnerzug senden
     return jsonify({
-        "fen": board.fen(),
+        "fen": puzzle_board.fen(),
         "opponent_move": opponent_move_uci
     })
 
