@@ -1,2 +1,0 @@
-import berserk
-import requests

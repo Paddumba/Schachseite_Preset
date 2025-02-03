@@ -7,7 +7,6 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.2/chess.js"></script>
         <script src="static/js/chessboard-1.0.0.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.css">
     </head>
 <body>
@@ -20,34 +19,40 @@
     <script>
         let board = Chessboard('board', {
              draggable: true,
-             position: 'start', onDrop: handleMove });
-        let game = new Chess();
-        let solution = [];
-        let currentMoveIndex = 0;
+             position: 'start', onDrop: handleMove }); //Hier wird die Funktion handlemove ausgeführt, wenn die Figur gedropped wird
 
+        let game = new Chess(); //Startet neues Spiel
+
+
+
+        //Funktion, die das geladene Puzzle vom Backend anzeigt
         async function loadPuzzle() {
             document.getElementById("message").innerText = "Lade Puzzle...";
             
-            let response = await fetch("/get_puzzle");
-            let data = await response.json();
+            let response = await fetch("/get_puzzle"); //Hier wird get_puzzle vom Backend ausgeführt
+            let data = await response.json(); //Hier wird das Puzzle vom Backend in response gespeichert
 
             if (data.error) {
                 document.getElementById("message").innerText = data.error;
                 return;
             }
 
-            game = new Chess(data.fen);
-            board.position(data.fen);
-            solution = data.solution;
-            currentMoveIndex = 0;
+            game = new Chess(data.fen); //Setzt die Schachstellung des Puzzles
+
+            board.position(data.fen); //Aktualisiert das Brett
 
             document.getElementById("message").innerText = "Puzzle geladen! Dein Zug.";
         }
         
+
+
+
         //Oben ist die Brett so definiert, dass bei onDrop handlemove ausgeführt wird
         async function handleMove(source, target) {
+
             let move = source + target;
-            let oldFen = board.fen();
+
+            let oldFen = board.fen(); //Hier wird das alte Brett gespeichert, falls der Zug falsch ist, oder es einen Fehler gibt
 
             try {
                 // 1️⃣ Spielerzug ans Backend senden
@@ -61,7 +66,7 @@
 
                 if (data.error) {
                     alert(data.error);
-                    board.position(oldFen)
+                    board.position(oldFen) //Hier wird bei einem Fehler das Brett resettet
                 
                 }
 
@@ -71,7 +76,7 @@
 
                 if (data.message === "Glückwunsch! Puzzle gelöst!") {
                     document.getElementById("message").innerText = data.message;
-                    return;  // 🎯 Sofort beenden, kein Gegnerzug mehr nötig
+                    return;  // Sofort beenden, kein Gegnerzug mehr nötig
         }
 
         
@@ -79,8 +84,8 @@
                 //document.getElementById("message").innerText = "Richtiger Zug! Warte auf Gegner...";
 
                 // 3️⃣ Falls Gegnerzug folgt, warte darauf und führe ihn automatisch aus
-                if (data.waiting_for_opponent) {
-                    setTimeout(fetchOpponentMove, 300);  // 1 Sekunde warten, dann Gegnerzug abrufen
+                if (data.waiting_for_opponent) { //Im Backend haben wir immer "waiting_for_opponent" weitergegeben, falls das Puzzle noch nicht vorbei ist
+                    setTimeout(fetchOpponentMove, 300);  // 0,3 Sekunden warten, dann Gegnerzug (Funktion fetchOpponentmove) abrufen
                 }
 
             } catch (error) {
@@ -97,6 +102,7 @@
 
                 if (data.opponent_move) {
                     let opponentMove = data.opponent_move;
+                    //Hier wird wieder der move e2e4 in die zwei Strings e2 und e4 aufgeteilt, um den Move zu machen
                     let source_opponent = opponentMove.substring(0, 2);
                     let target_opponent = opponentMove.substring(2, 4);
 
