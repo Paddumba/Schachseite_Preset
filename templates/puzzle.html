@@ -48,44 +48,56 @@
         async function handleMove(source, target) {
             let move = source + target;
 
-            // Prüfen, ob der Zug des Spielers korrekt ist
-            if (move === solution[currentMoveIndex]) {
-            // Den Spielerzug über das Backend verarbeiten
-            let response = await fetch("/puzzlemove", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ "move": move })
-            });
+            try {
+                // 1️⃣ Spielerzug ans Backend senden
+                let response = await fetch("/puzzlemove", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ "move": move })  // UCI-Zug an Backend senden
+                });
 
-            let data = await response.json();
+                let data = await response.json();
 
-            if (data.error) {
-                alert(data.error);  // Falls Fehler auftreten
-            } else {
-                // Das Schachbrett aktualisieren und den Status ausgeben
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+
+                // 2️⃣ Spielerzug auf dem Brett ausführen
+                game.move({ from: source, to: target });
                 board.position(data.fen);
-             document.getElementById("message").innerText = data.status;
+                document.getElementById("message").innerText = "Richtiger Zug! Warte auf Gegner...";
 
-                currentMoveIndex++;
+                // 3️⃣ Falls Gegnerzug folgt, warte darauf und führe ihn automatisch aus
+                if (data.waiting_for_opponent) {
+                    setTimeout(fetchOpponentMove, 1000);  // 1 Sekunde warten, dann Gegnerzug abrufen
+                }
 
-            if (currentMoveIndex < solution.length) {
-                // Gegnerzug durchführen, wenn er existiert
-                if (currentMoveIndex % 2 !== 0) {  // Ungerade Indizes: Gegnerzug
-                    let opponentMove = solution[currentMoveIndex];
+            } catch (error) {
+                console.error("Fehler bei der Anfrage:", error);
+                alert("Fehler bei der Kommunikation mit dem Server.");
+            }
+        }
+
+        // Funktion, um den Gegnerzug abzurufen und auszuführen
+        async function fetchOpponentMove() {
+            try {
+                let response = await fetch("/get_opponent_move", { method: "GET" });
+                let data = await response.json();
+
+                if (data.opponent_move) {
+                    let opponentMove = data.opponent_move;
                     let source_opponent = opponentMove.substring(0, 2);
                     let target_opponent = opponentMove.substring(2, 4);
 
-                    // Gegnerzug direkt auf dem Schachbrett ausführen
                     game.move({ from: source_opponent, to: target_opponent });
-                    board.position(game.fen());
-                    currentMoveIndex++;
+                    board.position(data.fen);
+                    document.getElementById("message").innerText = "Gegner hat gezogen! Dein Zug.";
                 }
+            } catch (error) {
+                console.error("Fehler beim Abrufen des Gegnerzugs:", error);
             }
         }
-    }       else {
-            alert("Falscher Zug! Versuche es erneut.");
-    }
-}
     </script>
 </body>
 </html>

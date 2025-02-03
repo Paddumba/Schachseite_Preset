@@ -36,8 +36,6 @@
                 return;
             }
 
-            console.log("Empfangenes Puzzle:", data); // Debugging
-
             game = new Chess(data.fen);
             board.position(data.fen);
             solution = data.solution;
@@ -47,37 +45,47 @@
         }
         
         //Oben ist die Brett so definiert, dass bei onDrop handlemove ausgeführt wird
-        function handleMove(source, target) {
+        async function handleMove(source, target) {
             let move = source + target;
 
+            // Prüfen, ob der Zug des Spielers korrekt ist
             if (move === solution[currentMoveIndex]) {
-                game.move({ from: source, to: target });
-                board.position(game.fen());
-                
+            // Den Spielerzug über das Backend verarbeiten
+            let response = await fetch("/puzzlemove", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ "move": move })
+            });
+
+            let data = await response.json();
+
+            if (data.error) {
+                alert(data.error);  // Falls Fehler auftreten
+            } else {
+                // Das Schachbrett aktualisieren und den Status ausgeben
+                board.position(data.fen);
+             document.getElementById("message").innerText = data.status;
+
                 currentMoveIndex++;
 
-                if (currentMoveIndex >= solution.length) {
-                    document.getElementById("message").innerText = "Glückwunsch! Puzzle gelöst!";
-                } else {
-                    //document.getElementById("message").innerText = "Richtig! Nächster Zug.";
-                    if (currentMoveIndex < solution.length) {
-                        let opponent_move = solution[currentMoveIndex]
-                        let source_opponent = opponent_move.substring(0, 2);
-                        let to_opponent = opponent_move.substring(2, 4);
-                        game.move({ from: source_opponent, to: to_opponent });  // Gegnerzug ausführen
-                        board.position(game.fen()); // Brett neu setzen
-                        currentMoveIndex++;         // Gegnerzug als erledigt markieren
+            if (currentMoveIndex < solution.length) {
+                // Gegnerzug durchführen, wenn er existiert
+                if (currentMoveIndex % 2 !== 0) {  // Ungerade Indizes: Gegnerzug
+                    let opponentMove = solution[currentMoveIndex];
+                    let source_opponent = opponentMove.substring(0, 2);
+                    let target_opponent = opponentMove.substring(2, 4);
 
-                    }
+                    // Gegnerzug direkt auf dem Schachbrett ausführen
+                    game.move({ from: source_opponent, to: target_opponent });
+                    board.position(game.fen());
+                    currentMoveIndex++;
                 }
-
-
-
-            } else {
-                document.getElementById("message").innerText = "Falsch! Versuche es nochmal.";
-                return 'snapback';
             }
         }
+    }       else {
+            alert("Falscher Zug! Versuche es erneut.");
+    }
+}
     </script>
 </body>
 </html>
