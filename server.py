@@ -21,10 +21,20 @@ def index():
 
 
 #Lädt die HTML-Seite für das normale Schachspiel.
-@app.route("/standard")
+@app.route("/standard.html")
 def standard():
 
     return render_template("standard.html")
+
+
+#Lädt die Seite puzzle html
+@app.route("/puzzle.html")
+def puzzle():
+    #Lädt die HTML-Seite mit dem Schachbrett.
+    return render_template("puzzle.html")
+
+
+
 
 
 # Diese Flask App wird vom Frontend aufgerufen, um einen Zug ins Backend zu schicken und dieser Funktion zu prüfen ob er legal ist, zu Checkmate führt, ...
@@ -59,11 +69,7 @@ def make_move(): #Führt einen Zug aus und sendet die neue Stellung an das Front
         return jsonify({"error": "Fehlerhafte Eingabe!"})
 
 
-#Lädt die Seite puzzle html
-@app.route("/puzzle")
-def puzzle():
-    #Lädt die HTML-Seite mit dem Schachbrett.
-    return render_template("puzzle.html")
+
 
 
 
