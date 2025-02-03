@@ -80,7 +80,7 @@
 
                 // 3️⃣ Falls Gegnerzug folgt, warte darauf und führe ihn automatisch aus
                 if (data.waiting_for_opponent) {
-                    setTimeout(fetchOpponentMove, 1000);  // 1 Sekunde warten, dann Gegnerzug abrufen
+                    setTimeout(fetchOpponentMove, 300);  // 1 Sekunde warten, dann Gegnerzug abrufen
                 }
 
             } catch (error) {

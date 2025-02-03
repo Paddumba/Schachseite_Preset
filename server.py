@@ -98,7 +98,7 @@ def get_puzzle():
     #print("game", game)
 
     # 🎯 Bis zum richtigen Puzzle-Zug vorspulen
-    puzzle_boardboard = game.board()
+    puzzle_board= game.board()
     initial_ply = data["puzzle"].get("initialPly", 0)
     initial_ply +=1
     #print("Intial ply", initial_ply)
